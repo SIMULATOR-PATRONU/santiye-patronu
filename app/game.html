@@ -143,7 +143,7 @@ svg.sp2{width:90px;height:34px}
 .start-logo{width:76px;height:76px;margin:0 auto 16px;border-radius:22px;display:grid;place-items:center;background:linear-gradient(145deg,#f6c453,#a66a13);color:#17232a;font-size:36px}
 .start-card h1{font-size:28px;margin:8px 0;color:#fff}.start-card p{color:#a8c5c9;line-height:1.55;font-size:13px}.start-actions{display:grid;gap:10px;margin-top:20px}
 .start-btn{border:1px solid #ffffff20;background:#102f3b;color:#eff8f7;border-radius:13px;padding:13px 15px;font-weight:800;font-size:14px;cursor:pointer}
-.start-btn.primary{background:linear-gradient(135deg,#f6c453,#d99a2c);color:#18242a;border:0}.start-btn:hover{filter:brightness(1.12)}
+.start-btn.primary{background:linear-gradient(135deg,#f6c453,#d99a2c);color:#18242a;border:0}.start-btn.admin-start{border-color:#d6a444;color:#f6cf79;background:linear-gradient(135deg,#182f3b,#10212b)}.start-btn:hover{filter:brightness(1.12)}
 .start-note{font-size:10px!important;color:#77999e!important;margin-top:16px}.loading-ring{width:44px;height:44px;border:4px solid #ffffff22;border-top-color:#f6c453;border-radius:50%;margin:22px auto;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}.account-chip{display:inline-flex;gap:7px;align-items:center;padding:6px 10px;border:1px solid #ffffff1c;border-radius:20px;color:#b8d0d1;font-size:11px}
 
@@ -1617,7 +1617,8 @@ function vSet(){
  return `<div class="card"><h3>Ayarlar</h3><div class="account-chip">👤 ${getProfile()?.name||"Yerel oyuncu"} · ${getProfile()?.provider||"Profil yok"}</div><div class="row" style="margin:10px 0"><button class="btn sm sec" onclick="showLogin()">Hesap / Profil</button><button class="btn sm sec" onclick="save();toast('Şirket kaydı güvenceye alındı')">Şimdi Kaydet</button></div><div class="row"><input id="nm" type="text" value="${S.name}"><button class="btn sm sec" onclick="rename()">Adı değiştir</button></div>
  <div class="mut" style="margin-top:12px">${desktop?"Her 5 dakikada Windows DPAPI şifreli yedek alınır":"Her 5 dakikada tarayıcı yedeği alınır"} · Gün ${S.day}.</div>
  ${backupControls}
- <div class="row" style="margin-top:12px"><button class="btn sm sec" onclick="reset()">Oyunu sıfırla</button><span class="sp"></span><button class="btn sm" onclick="adminToggle()">${S.adminOpen?"Yönetici Panelini Gizle":"Yönetici Panelini Aç"}</button></div></div>${S.adminOpen?vAdmin():""}`;
+ <div class="row" style="margin-top:12px"><button class="btn sm sec" onclick="reset()">Oyunu sıfırla</button><span class="sp"></span><button class="btn sm" onclick="adminToggle()">${S.adminOpen?"Yönetici Panelini Gizle":"Yönetici Panelini Aç"}</button></div>
+ <div class="row" style="margin-top:12px"><button class="btn sm sec" style="width:100%;border-color:#d6a444;color:#f6cf79" onclick="logoutToLogin()">↩ Çıkış Yap · Giriş Ekranına Dön</button></div></div>${S.adminOpen?vAdmin():""}`;
 }
 
 
@@ -1641,6 +1642,16 @@ function setProfile(provider){
  setTimer();render();restartBar();toast("Hoş geldin "+profile.name+"! Kayıtlı şirketin açıldı.");
 }
 function enterGuest(){setProfile("Misafir / Bu cihaz")}
+function logoutToLogin(){
+ // Önce mevcut şirket ilerlemesini güvenli biçimde kaydet; kayıtları veya profili silme.
+ save();
+ S.paused=true;
+ S.adminOpen=false;
+ setTimer();
+ restartBar();
+ showLogin();
+ toast("Çıkış yapıldı. Kayıtlı şirketin korunuyor.");
+}
 function showLogin(){
  const gate=document.getElementById("startupGate");gate.classList.add("show");
  const p=getProfile();
@@ -1650,16 +1661,41 @@ function showLogin(){
  <p>${p?"Kayıtlı şirketin bu cihazda saklanıyor. Devam ettiğinde kaldığın yerden açılacak.":"Oyuna başlamak için profil oluştur. Oyun ilerlemen bu cihazda otomatik kaydedilir."}</p>
  <input id="profileName" maxlength="28" placeholder="Şirket / oyuncu adı" value="${(p?.name||S.name||"").replace(/"/g,"&quot;")}" style="width:100%;margin:10px 0;padding:13px;border-radius:12px;border:1px solid #ffffff30;background:#071923;color:#fff">
  <div class="start-actions">
- <button class="start-btn primary" onclick="setProfile('Google hesabı bağlantı arayüzü')">🌐 Google ile devam et</button>
- <button class="start-btn" onclick="setProfile('Apple hesabı bağlantı arayüzü')"> Apple ile devam et</button>
- <button class="start-btn" onclick="setProfile('X hesabı bağlantı arayüzü')">𝕏 X (Twitter) ile devam et</button>
- <button class="start-btn" onclick="enterGuest()">👤 Misafir olarak devam et</button></div>
- <p class="start-note">ÖNEMLİ: Bu sürümde giriş düğmeleri yerel profil oluşturur. Gerçek Google, Apple ve X hesap doğrulaması için OAuth sunucusu, uygulama kimlikleri ve güvenli backend gerekir.</p>`;
+ <button class="start-btn primary" onclick="setProfile('Google hesabı / Google Play Games')">▶ Google / Google Play ile devam et</button>
+ <button class="start-btn" onclick="setProfile('Apple hesabı')"> Apple ile devam et</button>
+ <button class="start-btn" onclick="setProfile('X (Twitter) hesabı')">𝕏 X (Twitter) ile devam et</button>
+ <button class="start-btn" onclick="enterGuest()">👤 Misafir olarak devam et</button>
+ <button class="start-btn admin-start" onclick="showAdminLogin()">🔐 Yönetici olarak giriş yap</button></div>
+ <p class="start-note">Google, Apple ve X düğmeleri şu an yerel profil modundadır. Gerçek hesap doğrulaması için OAuth ve güvenli sunucu bağlantısı sonraki aşamada kurulacaktır. Misafir kayıtları bu cihazda saklanır.</p>`;
+}
+function showAdminLogin(){
+ const card=document.getElementById("startupCard");
+ card.innerHTML=`<div class="start-logo">🔐</div><div class="lbl">GÜVENLİ YÖNETİCİ ERİŞİMİ</div><h1>Yönetici Girişi</h1><p>Yönetim paneline erişmek için kullanıcı adı ve parolanı gir.</p>
+ <form class="start-actions" onsubmit="event.preventDefault();loginAdminFromGate()">
+ <input id="gateAdminUser" autocomplete="username" placeholder="Kullanıcı adı" value="" style="width:100%;padding:13px;border-radius:12px;border:1px solid #ffffff30;background:#071923;color:#fff">
+ <input id="gateAdminPass" type="password" autocomplete="current-password" placeholder="Parola" style="width:100%;padding:13px;border-radius:12px;border:1px solid #ffffff30;background:#071923;color:#fff">
+ <button class="start-btn primary" type="submit">Yönetici olarak giriş yap</button>
+ <button class="start-btn" type="button" onclick="showLogin()">← Giriş seçeneklerine dön</button></form>
+ <p class="start-note">İlk kurulum yönetici bilgileri: admin / admin. Güvenlik için daha sonra değiştir.</p>`;
+}
+async function loginAdminFromGate(){
+ const username=document.getElementById("gateAdminUser")?.value||"";
+ const password=document.getElementById("gateAdminPass")?.value||"";
+ let ok=false;
+ if(window.desktopBridge&&window.desktopBridge.isDesktop){try{ok=await window.desktopBridge.adminLogin(username,password)}catch(e){ok=false}}
+ else ok=username==="admin"&&password==="admin";
+ if(!ok){toast("Yönetici kullanıcı adı veya parolası hatalı.");return}
+ S.adminOpen=true;
+ const profile=getProfile();
+ S.name=profile?.name||S.name||"Yönetici";
+ save();
+ document.getElementById("startupGate").classList.remove("show");
+ setTimer();render();restartBar();toast("Yönetici girişi başarılı. Yönetim yetkileri açıldı.");
 }
 function showLoading(){
  const gate=document.getElementById("startupGate");gate.classList.add("show");
  document.getElementById("startupCard").innerHTML=`<div class="start-logo">🏗️</div><h1>ŞANTİYE PATRONU</h1><div class="loading-ring"></div><b>Şirketin yükleniyor...</b><p>Kayıtlar kontrol ediliyor, projeler ve filo hazırlanıyor.</p>`;
- setTimeout(()=>{const p=getProfile();if(p){document.getElementById("startupCard").innerHTML=`<div class="start-logo">🏗️</div><h1>Hoş geldin ${String(p.name).replace(/[<>&"]/g,"")}</h1><div class="loading-ring"></div><b>Kaldığın yerden devam ediliyor...</b>`;setTimeout(()=>{gate.classList.remove("show");setTimer();render();restartBar()},700)}else showLogin()},1100);
+ setTimeout(()=>showLogin(),650);
 }
 
 
