@@ -1,0 +1,68 @@
+SANTIYE PATRONU WINDOWS - GUNCELLEME REHBERI
+============================================
+
+BU PAKETTE NE VAR?
+- Windows masaustu uygulamasi (Electron)
+- Sifreli yerel kayit ve onceki kayit yedegi
+- Yonetici girisi (ilk surum: admin / admin)
+- GitHub Releases uzerinden surum dagitimi altyapisi
+- Her yeni oyun surumunu yayinlamak icin publish-release.bat
+
+A) BIR KERE YAPILACAK ILK KURULUM
+---------------------------------
+1. Windows bilgisayara Node.js 24 LTS ve Git for Windows kur:
+   https://nodejs.org/
+   https://git-scm.com/download/win
+2. ZIP dosyasini normal bir klasore cikar. Ornegin:
+   C:\SantiyePatronu\
+3. GitHub hesabinda santiye-patronu adiyla BOS bir repository olustur.
+   README, .gitignore veya lisans secme; repository bos olsun.
+4. Ilk yayin oncesinde main.cjs icindeki admin/admin girisini kendi
+   kullanici adi ve guclu parolanla degistir. Varsayilan parolayla herkese
+   acik kaynak deposu yayinlama.
+5. SETUP_GITHUB.bat dosyasina cift tikla ve GitHub kullanici adini gir.
+   GitHub kimlik dogrulamasi acilirsa tarayicida izin ver.
+6. Ilk Windows kurulum dosyasini olusturmak icin build-windows.bat'i calistir.
+   EXE, dist klasorune gelir.
+
+B) SONRAKI HER OYUN GUNCELLEMESI
+--------------------------------
+1. Yeni oyun HTML dosyasini proje klasorundeki app\game.html dosyasinin
+   yerine koy. Diger masaustu kodlari da degistiyse ayni klasorde guncelle.
+2. publish-release.bat dosyasina cift tikla.
+3. Yeni ve daha once kullanilmamis surum numarasini gir:
+   1.0.1 -> 1.0.2 -> 1.1.0 -> 2.0.0
+4. Degisiklikleri tek satirda yaz.
+5. Betik degisiklikleri Git'e kaydeder ve v1.0.1 gibi bir etiketle GitHub'a
+   gonderir.
+6. GitHub repository > Actions bolumunden Windows Release isinin sonucunu
+   kontrol et. Basarili olunca Releases bolumunde Setup EXE yayinlanir.
+7. Oyuncu uygulamayi acinca yeni surum bildirimi alir; indirip yeniden
+   baslatmayi onaylar.
+
+ONEMLI KURALLAR
+---------------
+- SETUP_GITHUB.bat sadece ILK KURULUMDA calistirilir.
+- Sonraki her surum icin yalnizca publish-release.bat kullanilir.
+- Surum numarasini tekrar kullanma.
+- Guncelleme, oyun kayitlarini silmez; kayitlar Windows kullanici profilinde
+  Electron safeStorage/Windows DPAPI ile saklanir.
+- Yine de buyuk surumlerden once oyundaki yedek secenegini kullan.
+- Standart GitHub otomatik guncelleyicisi icin Releases erisilebilir olmali.
+  Public repository kullanirsan kaynak kod da gorunur. admin/admin gibi
+  varsayilan parolayi yayindan once mutlaka degistir. Depoyu private tutarsan
+  oyunculara kimlik dogrulamali ozel bir update sunucusu gerekir; bu paket
+  ozel sunucu kimlik dogrulamasini kurmaz.
+- Bu paket tek basina sunucu tarafli hile engelleme saglamaz. Gercek cok
+  oyunculu ekonomi ve guvenilir hile onleme icin sunucu dogrulamasi gerekir.
+
+SORUN GIDERME
+-------------
+- Git commit kimlik hatasi verirse Komut Istemi'nde bir kez calistir:
+  git config --global user.name "Ad Soyad"
+  git config --global user.email "GitHub e-posta adresin"
+- GitHub push hatasi verirse Git Credential Manager ile GitHub girisini
+  tamamla ve tekrar dene.
+- Actions basarisizsa Actions isine girip hata ayrintisini kontrol et.
+- Repo adi santiye-patronu olmali. Farkli ad kullanacaksan setup betigindeki
+  repository adreslerini de degistirmek gerekir.
