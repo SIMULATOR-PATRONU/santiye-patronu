@@ -1,4 +1,11 @@
+## 1.0.1 - 2026-11-27
+- 1.0.1
+
 # Değişiklik Günlüğü
+
+## 1.0.1 — 2026-11-27
+- Otomatik güncelleme adresi düzeltildi (GitHub sahibi: SIMULATOR-PATRONU).
+- Yönetici girişi artık düz metin değil, scrypt özetiyle doğrulanır; giriş ekranındaki varsayılan şifre ipucu kaldırıldı.
 
 ## 1.0.0 — 2026-11-26
 - Windows x64 masaüstü proje paketi hazırlandı.

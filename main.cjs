@@ -3,6 +3,7 @@
 const { app, BrowserWindow, ipcMain, safeStorage, shell, dialog } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const fs = require('node:fs');
+const crypto = require('node:crypto');
 const path = require('node:path');
 
 const APP_VERSION = app.getVersion();
@@ -86,8 +87,15 @@ function registerIpc() {
   ipcMain.handle('admin:login', async (_event, username, password) => {
     const now = Date.now();
     if (now < adminLockUntil) return false;
-    // Initial credentials requested by the owner. Replace before public release.
-    const valid = username === 'admin11' && password === 'admin11';
+    // Parola düz metin olarak saklanmaz; yalnızca scrypt özeti tutulur.
+    const ADMIN_USER = 'patron';
+    const ADMIN_SALT = 'e88b27fb68b0abd962c59da45c087399';
+    const ADMIN_HASH = '29dd66576fa0c1738d05326bb4ee5fe3da1050a39a7da11c8568be6d7fdc45b6';
+    let valid = false;
+    try {
+      const given = crypto.scryptSync(String(password || ''), Buffer.from(ADMIN_SALT, 'hex'), 32);
+      valid = String(username || '') === ADMIN_USER && crypto.timingSafeEqual(given, Buffer.from(ADMIN_HASH, 'hex'));
+    } catch (_) { valid = false; }
     if (valid) {
       failedAdminAttempts = 0;
       adminLockUntil = 0;

@@ -8,7 +8,7 @@
 
 1. Node.js 24 LTS ve Git for Windows kur.
 2. ZIP'i bir klasöre çıkar.
-3. İlk dağıtımdan önce `main.cjs` içindeki geçici `admin/admin` girişini değiştir.
+3. İlk dağıtımdan önce `main.cjs` içindeki geçici yönetici girişini değiştir.
 4. GitHub'da `santiye-patronu` adında boş bir repository oluştur.
 5. `SETUP_GITHUB.bat` dosyasını bir kez çalıştırıp GitHub kullanıcı adını gir.
 6. `build-windows.bat` dosyasını çalıştır. Kurulum `.exe` dosyası `dist` klasöründe oluşur.
@@ -40,4 +40,4 @@ Oyun kayıtları Windows kullanıcı profilinde `Electron safeStorage` üzerinde
 - `publish-release.bat` — her yeni sürümü yayınlar
 - `build-windows.bat` — Windows kurulum EXE'sini yerel olarak oluşturur
 
-**Dağıtım notu:** GitHub Releases otomatik güncellemesinin tüm oyuncular tarafından kimlik doğrulaması olmadan alınabilmesi için standart kurulumda public repository gerekir. Public kaynak deposuna geçmeden önce `admin/admin` varsayılan girişini değiştir. Private repository için ayrıca kimlik doğrulamalı güncelleme sunucusu gerekir.
+**Dağıtım notu:** GitHub Releases otomatik güncellemesinin tüm oyuncular tarafından kimlik doğrulaması olmadan alınabilmesi için standart kurulumda public repository gerekir. Public kaynak deposuna geçmeden önce varsayılan yönetici girişini değiştir. Private repository için ayrıca kimlik doğrulamalı güncelleme sunucusu gerekir.

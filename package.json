@@ -1,13 +1,13 @@
 {
   "name": "santiye-patronu",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Şantiye Patronu Windows masaüstü oyunu",
   "author": "Şantiye Patronu",
   "license": "UNLICENSED",
   "main": "main.cjs",
   "repository": {
     "type": "git",
-    "url": "https://github.com/YOUR_GITHUB_USERNAME/santiye-patronu.git"
+    "url": "https://github.com/SIMULATOR-PATRONU/santiye-patronu.git"
   },
   "scripts": {
     "start": "electron .",
@@ -60,7 +60,7 @@
     "publish": [
       {
         "provider": "github",
-        "owner": "YOUR_GITHUB_USERNAME",
+        "owner": "SIMULATOR-PATRONU",
         "repo": "santiye-patronu",
         "releaseType": "release"
       }

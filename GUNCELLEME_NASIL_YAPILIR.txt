@@ -4,7 +4,7 @@ SANTIYE PATRONU WINDOWS - GUNCELLEME REHBERI
 BU PAKETTE NE VAR?
 - Windows masaustu uygulamasi (Electron)
 - Sifreli yerel kayit ve onceki kayit yedegi
-- Yonetici girisi (ilk surum: admin / admin)
+- Yonetici girisi (ilk surum: kullanıcı: patron)
 - GitHub Releases uzerinden surum dagitimi altyapisi
 - Her yeni oyun surumunu yayinlamak icin publish-release.bat
 
@@ -17,7 +17,7 @@ A) BIR KERE YAPILACAK ILK KURULUM
    C:\SantiyePatronu\
 3. GitHub hesabinda santiye-patronu adiyla BOS bir repository olustur.
    README, .gitignore veya lisans secme; repository bos olsun.
-4. Ilk yayin oncesinde main.cjs icindeki admin/admin girisini kendi
+4. Yonetici sifresi main.cjs icinde ozet (hash) olarak saklanir; degistirmek icin
    kullanici adi ve guclu parolanla degistir. Varsayilan parolayla herkese
    acik kaynak deposu yayinlama.
 5. SETUP_GITHUB.bat dosyasina cift tikla ve GitHub kullanici adini gir.
