@@ -1,6 +1,6 @@
 {
   "name": "santiye-patronu",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Şantiye Patronu Windows masaüstü oyunu",
   "author": "Şantiye Patronu",
   "license": "UNLICENSED",
@@ -33,6 +33,7 @@
     "files": [
       "main.cjs",
       "preload.cjs",
+      "oauth.config.json",
       "package.json",
       "app/**/*"
     ],

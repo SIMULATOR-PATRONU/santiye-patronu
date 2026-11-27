@@ -1,0 +1,30 @@
+GOOGLE VE X GIRISI KURULUMU (oauth.config.json)
+===============================================
+Oyun artik gercek Google ve X (Twitter) girisi destekler. Calismasi icin
+kendi uygulama kimliklerini (clientId) almalisin. Kimlik yoksa dugmeler
+"henuz kurulmadi" der, sahte giris yapmaz.
+
+GOOGLE
+1. https://console.cloud.google.com adresinde proje olustur.
+2. "API'ler ve Hizmetler > OAuth izin ekrani": uygulama adini yaz, kendi
+   e-postani "test kullanicisi" olarak ekle (yayina almadan once test modunda
+   sadece eklenen kisiler girebilir; herkese acmak icin "Yayinla" de).
+3. "Kimlik bilgileri > Kimlik bilgisi olustur > OAuth istemci kimligi".
+   Uygulama turu: "Masaustu uygulamasi".
+4. Verilen Client ID ve Client Secret'i oauth.config.json icindeki
+   "google" bolumune yaz. (Masaustu uygulamalarinda bu secret gizli sayilmaz.)
+
+X (TWITTER)
+1. https://developer.x.com adresinde proje ve uygulama olustur.
+2. User authentication settings: OAuth 2.0 ac, uygulama turu "Native App"
+   (public client).
+3. Callback URL olarak AYNEN su adresi ekle:  http://127.0.0.1:53682/callback
+4. Client ID'yi oauth.config.json icindeki "x" bolumune yaz.
+
+APPLE: Apple ile giris icin Apple Developer hesabi (yillik ucretli) ve HTTPS
+bir sunucu gerekir; bu surumde kapali.
+GOOGLE PLAY GAMES: Yalniz Android uygulamalarinda calisir; Windows'ta Google
+girisi kullanilir.
+
+Dosya hem projede hem (istersen) %APPDATA%\Santiye Patronu\oauth.config.json
+konumunda aranir; ikincisi oncelikli olur.

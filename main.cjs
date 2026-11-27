@@ -1,6 +1,7 @@
 'use strict';
 
 const { app, BrowserWindow, ipcMain, safeStorage, shell, dialog } = require('electron');
+const http = require('node:http');
 const { autoUpdater } = require('electron-updater');
 const fs = require('node:fs');
 const crypto = require('node:crypto');
@@ -42,42 +43,171 @@ function decryptSave(filePath) {
   }
 }
 
-function loadSecureSave() {
-  return decryptSave(SAVE_FILE) || decryptSave(BACKUP_FILE) || null;
+function slotFiles(slot) {
+  const s = String(slot || '');
+  if (s === 'legacy') return { file: SAVE_FILE, backup: BACKUP_FILE, readOnly: true };
+  if (!/^[a-z0-9_-]{1,48}$/.test(s)) return null;
+  return {
+    file: path.join(USER_DATA, `company-save.${s}.dat`),
+    backup: path.join(USER_DATA, `company-save.${s}.previous.dat`),
+    readOnly: false
+  };
 }
 
-function writeSecureSave(text) {
+function loadSecureSave(slot) {
+  const f = slotFiles(slot);
+  if (!f) return null;
+  return decryptSave(f.file) || decryptSave(f.backup) || null;
+}
+
+function writeSecureSave(text, slot) {
+  const f = slotFiles(slot);
+  if (!f || f.readOnly) throw new Error('Invalid save slot');
   if (!isValidGameSave(text)) throw new Error('Invalid game state');
   if (!safeStorage.isEncryptionAvailable()) {
     throw new Error('Windows secure storage (DPAPI) is unavailable');
   }
 
   fs.mkdirSync(USER_DATA, { recursive: true });
-  const existing = decryptSave(SAVE_FILE);
+  const existing = decryptSave(f.file);
   const encrypted = safeStorage.encryptString(text);
-  const tempFile = `${SAVE_FILE}.tmp`;
+  const tempFile = `${f.file}.tmp`;
   fs.writeFileSync(tempFile, encrypted, { mode: 0o600 });
 
   // Keep last known-good encrypted save before replacing the current one.
   if (existing && existing !== text) {
     try {
-      fs.copyFileSync(SAVE_FILE, BACKUP_FILE);
+      fs.copyFileSync(f.file, f.backup);
     } catch (error) {
       console.warn('Previous save backup could not be rotated:', error);
     }
   }
-  fs.renameSync(tempFile, SAVE_FILE);
+  fs.renameSync(tempFile, f.file);
   return true;
 }
 
+
+// ---------------------------------------------------------------------------
+// Gerçek hesap girişi: Google ve X (OAuth 2.0 + PKCE, 127.0.0.1 geri dönüş).
+// Kimlik bilgileri oauth.config.json içindeki clientId alanlarından okunur.
+// ---------------------------------------------------------------------------
+function readOAuthConfig() {
+  const files = [path.join(USER_DATA, 'oauth.config.json'), path.join(__dirname, 'oauth.config.json')];
+  for (const file of files) {
+    try {
+      if (fs.existsSync(file)) return JSON.parse(fs.readFileSync(file, 'utf8'));
+    } catch (error) {
+      console.warn('oauth.config.json okunamadı:', error.message);
+    }
+  }
+  return {};
+}
+
+const b64url = (buf) => Buffer.from(buf).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+let oauthBusy = false;
+
+function waitForOAuthCode(port, expectedState) {
+  return new Promise((resolve, reject) => {
+    const server = http.createServer((req, res) => {
+      try {
+        const url = new URL(req.url, `http://127.0.0.1:${port}`);
+        if (url.pathname !== '/callback') { res.writeHead(404); res.end(); return; }
+        const code = url.searchParams.get('code');
+        const state = url.searchParams.get('state');
+        const err = url.searchParams.get('error');
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end('<meta charset="utf-8"><body style="font-family:sans-serif;background:#07151e;color:#fff;text-align:center;padding-top:80px"><h2>' +
+          (code && state === expectedState && !err ? 'Giriş tamamlandı. Bu sekmeyi kapatıp oyuna dönebilirsin.' : 'Giriş tamamlanamadı. Oyuna dönüp tekrar dene.') + '</h2></body>');
+        clearTimeout(timer);
+        server.close();
+        if (err || !code || state !== expectedState) reject(new Error(err || 'Geçersiz yanıt'));
+        else resolve(code);
+      } catch (error) {
+        clearTimeout(timer);
+        server.close();
+        reject(error);
+      }
+    });
+    const timer = setTimeout(() => { server.close(); reject(new Error('Zaman aşımı')); }, 180000);
+    server.on('error', (error) => { clearTimeout(timer); reject(error); });
+    server.listen(port, '127.0.0.1');
+  });
+}
+
+async function oauthLogin(provider) {
+  const cfg = readOAuthConfig()[provider] || {};
+  if (!cfg.clientId || /YOUR_|BURAYA/i.test(cfg.clientId)) {
+    return { ok: false, reason: 'not-configured' };
+  }
+  if (oauthBusy) return { ok: false, reason: 'busy' };
+  oauthBusy = true;
+  try {
+    const port = Number(cfg.port) || (provider === 'x' ? 53682 : 53681);
+    const redirect = `http://127.0.0.1:${port}/callback`;
+    const verifier = b64url(crypto.randomBytes(48));
+    const challenge = b64url(crypto.createHash('sha256').update(verifier).digest());
+    const state = b64url(crypto.randomBytes(16));
+    let authUrl;
+    if (provider === 'google') {
+      authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams({
+        client_id: cfg.clientId, redirect_uri: redirect, response_type: 'code',
+        scope: 'openid profile email', state, code_challenge: challenge, code_challenge_method: 'S256'
+      });
+    } else if (provider === 'x') {
+      authUrl = 'https://twitter.com/i/oauth2/authorize?' + new URLSearchParams({
+        client_id: cfg.clientId, redirect_uri: redirect, response_type: 'code',
+        scope: 'users.read tweet.read', state, code_challenge: challenge, code_challenge_method: 'S256'
+      });
+    } else {
+      return { ok: false, reason: 'unsupported' };
+    }
+    const codePromise = waitForOAuthCode(port, state);
+    shell.openExternal(authUrl);
+    const code = await codePromise;
+
+    const body = new URLSearchParams({
+      grant_type: 'authorization_code', code, redirect_uri: redirect,
+      client_id: cfg.clientId, code_verifier: verifier
+    });
+    if (cfg.clientSecret) body.set('client_secret', cfg.clientSecret);
+    const tokenUrl = provider === 'google' ? 'https://oauth2.googleapis.com/token' : 'https://api.twitter.com/2/oauth2/token';
+    const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+    if (provider === 'x' && cfg.clientSecret) {
+      headers.Authorization = 'Basic ' + Buffer.from(`${cfg.clientId}:${cfg.clientSecret}`).toString('base64');
+      body.delete('client_secret');
+    }
+    const tokenRes = await fetch(tokenUrl, { method: 'POST', headers, body });
+    const token = await tokenRes.json();
+    if (!tokenRes.ok || token.error) throw new Error(token.error_description || token.error || 'Token alınamadı');
+
+    let sub, name, email = '';
+    if (provider === 'google') {
+      const payload = JSON.parse(Buffer.from(String(token.id_token).split('.')[1], 'base64').toString('utf8'));
+      sub = payload.sub; name = payload.name || payload.given_name || 'Google oyuncusu'; email = payload.email || '';
+    } else {
+      const me = await (await fetch('https://api.twitter.com/2/users/me', { headers: { Authorization: `Bearer ${token.access_token}` } })).json();
+      if (!me.data || !me.data.id) throw new Error('X hesabı okunamadı');
+      sub = me.data.id; name = me.data.name || me.data.username || 'X oyuncusu';
+    }
+    if (!sub) throw new Error('Hesap kimliği alınamadı');
+    const uid = crypto.createHash('sha256').update(`${provider}:${sub}`).digest('hex').slice(0, 20);
+    return { ok: true, provider, uid, name: String(name).slice(0, 28), email };
+  } catch (error) {
+    console.warn('OAuth hatası:', error.message);
+    return { ok: false, reason: 'failed', message: String(error.message || error) };
+  } finally {
+    oauthBusy = false;
+  }
+}
+
 function registerIpc() {
-  ipcMain.on('secure-save:get', (event) => {
-    event.returnValue = loadSecureSave();
+  ipcMain.on('secure-save:get', (event, slot) => {
+    event.returnValue = loadSecureSave(slot);
   });
 
-  ipcMain.on('secure-save:write', (event, payload) => {
+  ipcMain.on('secure-save:write', (event, payload, slot) => {
     try {
-      event.returnValue = writeSecureSave(payload);
+      event.returnValue = writeSecureSave(payload, slot);
     } catch (error) {
       console.error('Secure save failed:', error);
       event.returnValue = false;
@@ -109,6 +239,8 @@ function registerIpc() {
     }
     return false;
   });
+
+  ipcMain.handle('oauth:login', async (_event, provider) => oauthLogin(String(provider || '')));
 
   ipcMain.on('admin:status', (event) => {
     event.returnValue = adminSession;

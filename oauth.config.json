@@ -1,0 +1,4 @@
+{
+  "google": { "clientId": "BURAYA_GOOGLE_CLIENT_ID", "clientSecret": "BURAYA_GOOGLE_CLIENT_SECRET", "port": 53681 },
+  "x":      { "clientId": "BURAYA_X_CLIENT_ID",      "clientSecret": "", "port": 53682 }
+}
